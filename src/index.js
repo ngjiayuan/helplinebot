@@ -6,17 +6,24 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 // Start bot
 bot.start((ctx) => ctx.reply('Welcome to HelpLine Bot.'));
 
-bot.launch({
-  webhook: {
-    domain: 'localhost', // Update with your server's domain
-    port: process.env.PORT || 3000,
-  },
+// Comment this out first -> connect to express server 
+// bot.launch({
+//   webhook: {
+//     domain: 'localhost', // Update with your server's domain
+//     port: process.env.PORT || 3000,
+//   },
+// });
+
+// Handle unknown commands
+bot.on('text', (ctx) => {
+  // This will be triggered when the user sends a message that doesn't match any defined command
+  ctx.reply('Command not found. Please use valid commands.');
 });
 
 // Command for general users to request help
-bot.command('getHelp', async (ctx) => {
+bot.command('getHelp', async (ctx) => { 
   const userId = ctx.from.id;
-  if (!users[userId].isChatting) {
+  if (!users[userId].isChatting) { //note this will break the code; should query database
     // Implement logic to match the user with an available volunteer
     // Set up an anonymous chat session
     // You can use ctx.reply to communicate with the user
@@ -32,6 +39,7 @@ bot.command('getHelp', async (ctx) => {
 bot.command('endChat', async (ctx) => {
   const userId = ctx.from.id;
   if (users[userId].isChatting) {
+    //note this will break the code; should query database
     // Implement logic to end the chat session
     // You can use ctx.reply to communicate with the user
     await ctx.reply('Chat session ended.');
