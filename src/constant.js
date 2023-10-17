@@ -3,3 +3,9 @@ export const REGISTER_STATE = {
   APPROVED: 'approved',
   REJECTED: 'rejected',
 };
+
+export const ROLES = {
+  ADMIN: 'admin',
+  VOLUNTEER: 'volunteer',
+  USER: 'user',
+};

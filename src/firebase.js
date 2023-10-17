@@ -2,7 +2,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import 'dotenv/config';
-import { REGISTER_STATE } from './constant.js';
+import { REGISTER_STATE, ROLES } from './constant.js';
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
@@ -44,32 +44,6 @@ export async function addUser(user) {
     });
   } catch (e) {
     throw new Error(`error adding user`);
-  }
-}
-
-export async function isAdmin(id) {
-  try {
-    const docRef = doc(db, 'user', `${id}`);
-    const docData = (await getDoc(docRef)).data();
-    if (docData) {
-      return docData.role === 'admin';
-    }
-    return false; // undefined if no such user
-  } catch (e) {
-    throw new Error(`error fetching user`);
-  }
-}
-
-export async function isVolunteer(id) {
-  try {
-    const docRef = doc(db, 'user', `${id}`);
-    const docData = (await getDoc(docRef)).data();
-    if (docData) {
-      return docData.role === 'volunteer';
-    }
-    return false; // undefined if no such user
-  } catch (e) {
-    throw new Error(`error fetching user`);
   }
 }
 
@@ -237,3 +211,43 @@ export async function connectUser(id) {
     throw new Error(`error connecting user`);
   }
 }
+
+export async function getRole(id) {
+  try {
+    const docRef = doc(db, 'user', `${id}`);
+    const docData = (await getDoc(docRef)).data();
+    if (docData) {
+      return docData.role;
+    }
+    return ''; // undefined if no such user
+  } catch (e) {
+    throw new Error(`error fetching user role`);
+  }
+}
+
+export async function isVolunteer(id) {
+  try {
+    const docRef = doc(db, 'user', `${id}`);
+    const docData = (await getDoc(docRef)).data();
+    if (docData) {
+      return docData.role == ROLES.VOLUNTEER;
+    }
+    return false; // undefined if no such user
+  } catch (e) {
+    throw new Error(`error fetching user role`);
+  }
+}
+
+export async function isAdmin(id) {
+  try {
+    const docRef = doc(db, 'user', `${id}`);
+    const docData = (await getDoc(docRef)).data();
+    if (docData) {
+      return docData.role == ROLES.ADMIN;
+    }
+    return false; // undefined if no such user
+  } catch (e) {
+    throw new Error(`error fetching user role`);
+  }
+}
+

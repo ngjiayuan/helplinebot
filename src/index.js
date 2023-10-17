@@ -6,7 +6,7 @@ import {
   startResponse,
 } from './botResponses.js';
 import 'dotenv/config';
-import { isBlocked, isRegistered } from './firebase.js';
+import { isBlocked, isRegistered, isVolunteer } from './firebase.js';
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
@@ -89,20 +89,24 @@ bot.command('register', async (ctx) => {
 });
 
 // Volunteer commands
-
 bot.command('reportUser', async (ctx) => {
-  // TODO: volunteer guard
-  const args = ctx.update.message.text.split(' ');
-  if (args.length === 1) {
-    ctx.reply(`no user id found. use /reportUser [userId]`);
+  // volunteer guard
+  if (isVolunteer(ctx.from.id)) {
+    ctx.reply(`oops, something went wrong...`);
     return;
-  }
-  ctx.sendMessage(
-    `volunteer ${ctx.from.id}, ${ctx.from.first_name}, ${ctx.from.username} has reported user ${args[1]}. /blockUser [userId] to block user`,
-    {
-      chat_id: 222442132, // TODO: admin id, make it send to all admins
+  } else {
+    const args = ctx.update.message.text.split(' ');
+    if (args.length === 1) {
+      ctx.reply(`no user id found. use /reportUser [userId]`);
+      return;
     }
-  );
+    ctx.sendMessage(
+      `volunteer ${ctx.from.id}, ${ctx.from.first_name}, ${ctx.from.username} has reported user ${args[1]}. /blockUser [userId] to block user`,
+      {
+        chat_id: 222442132, // TODO: admin id, make it send to all admins
+      }
+    );
+  }
 });
 
 // Comment this out first -> connect to express server
