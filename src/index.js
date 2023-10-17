@@ -1,11 +1,12 @@
-import { Telegraf } from "telegraf";
+import { Telegraf } from 'telegraf';
 import {
   addVolunteerResponse,
   blockUserResponse,
   removeVolunteerResponse,
   startResponse,
-} from "./botResponses.js";
-import "dotenv/config";
+} from './botResponses.js';
+import 'dotenv/config';
+import { isBlocked, isRegistered } from './firebase.js';
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
@@ -19,14 +20,13 @@ bot.start(async (ctx) => {
   ctx.reply(msg);
 });
 
-bot.command("test", (ctx) => {
+bot.command('test', (ctx) => {
   ctx.reply(JSON.stringify(ctx.from));
 });
 
 // Admin commands
-
-bot.command("addVolunteer", async (ctx) => {
-  const args = ctx.update.message.text.split(" ");
+bot.command('addVolunteer', async (ctx) => {
+  const args = ctx.update.message.text.split(' ');
   if (args.length === 1) {
     ctx.reply(`no user id found. use /addVolunteer [userId]`);
     return;
@@ -35,8 +35,8 @@ bot.command("addVolunteer", async (ctx) => {
   ctx.reply(msg);
 });
 
-bot.command("removeVolunteer", async (ctx) => {
-  const args = ctx.update.message.text.split(" ");
+bot.command('removeVolunteer', async (ctx) => {
+  const args = ctx.update.message.text.split(' ');
   if (args.length === 1) {
     ctx.reply(`no user id found. use /removeVolunteer [userId]`);
     return;
@@ -45,8 +45,8 @@ bot.command("removeVolunteer", async (ctx) => {
   ctx.reply(msg);
 });
 
-bot.command("blockUser", async (ctx) => {
-  const args = ctx.update.message.text.split(" ");
+bot.command('blockUser', async (ctx) => {
+  const args = ctx.update.message.text.split(' ');
   if (args.length === 1) {
     ctx.reply(`no user id found. use /blockUser [userId]`);
     return;
@@ -56,8 +56,8 @@ bot.command("blockUser", async (ctx) => {
   ctx.reply(msg);
 });
 
-bot.command("unblockUser", async (ctx) => {
-  const args = ctx.update.message.text.split(" ");
+bot.command('unblockUser', async (ctx) => {
+  const args = ctx.update.message.text.split(' ');
   if (args.length === 1) {
     ctx.reply(`no user id found. use /unblockUser [userId]`);
     return;
@@ -67,24 +67,32 @@ bot.command("unblockUser", async (ctx) => {
 });
 
 // all user commands
-
-bot.command("register", async (ctx) => {
+// Database will store isRegistered to keep track
+bot.command('register', async (ctx) => {
   // TODO: need to find a way to prevent abuse of this command
-  // TODO: prevent blocked user from using
-  ctx.sendMessage(
-    `userId: ${ctx.from.id}, name: ${ctx.from.first_name}, username: ${ctx.from.username}, requested to be added as volunteer. /addVolunteer [userId] to add volunteer`,
-    {
-      chat_id: 222442132, // TODO: admin id, make it send to all admins
-    }
-  );
-  ctx.reply("a request has been sent to admin");
+  const userIsRegistered = isRegistered(ctx.from.id);
+  const userIsBlocked = isBlocked(ctx.from.id);
+  if (userIsRegistered && !userIsBlocked) {
+    ctx.sendMessage('a request has already been sent to or approved by admin');
+  } else if (userIsBlocked) {
+    // prevent blocked user from using
+    ctx.sendMessage('oops, something went wrong...');
+  } else {
+    ctx.sendMessage(
+      `userId: ${ctx.from.id}, name: ${ctx.from.first_name}, username: ${ctx.from.username}, requested to be added as volunteer. /addVolunteer [userId] to add volunteer`,
+      {
+        chat_id: 222442132, // TODO: admin id, make it send to all admins
+      }
+    );
+    ctx.reply('a request has been sent to admin');
+  }
 });
 
 // Volunteer commands
 
-bot.command("reportUser", async (ctx) => {
+bot.command('reportUser', async (ctx) => {
   // TODO: volunteer guard
-  const args = ctx.update.message.text.split(" ");
+  const args = ctx.update.message.text.split(' ');
   if (args.length === 1) {
     ctx.reply(`no user id found. use /reportUser [userId]`);
     return;
@@ -138,32 +146,32 @@ bot.command("reportUser", async (ctx) => {
 // });
 
 // Command for volunteers to start volunteering
-bot.command("startVolunteering", async (ctx) => {
+bot.command('startVolunteering', async (ctx) => {
   const userId = ctx.from.id;
   // Implement logic for a volunteer to start volunteering
   // You can use `ctx.reply` to communicate with the volunteer
-  await ctx.reply("You are now volunteering.");
+  await ctx.reply('You are now volunteering.');
 });
 
 // Command for volunteers to end volunteering
-bot.command("endVolunteering", async (ctx) => {
+bot.command('endVolunteering', async (ctx) => {
   const userId = ctx.from.id;
   // Implement logic for a volunteer to end volunteering
   // You can use `ctx.reply` to communicate with the volunteer
-  await ctx.reply("You have ended your volunteering session.");
+  await ctx.reply('You have ended your volunteering session.');
 });
 
-bot.command("fetchReportedUser", async (ctx) => {
+bot.command('fetchReportedUser', async (ctx) => {
   const adminId = ctx.from.id;
   // Implement logic to fetch reported users
   // You can use `ctx.reply` to communicate with the admin
-  await ctx.reply("Fetching reported users...");
+  await ctx.reply('Fetching reported users...');
 });
 
 // Handle unknown commands
-bot.on("text", (ctx) => {
+bot.on('text', (ctx) => {
   // This will be triggered when the user sends a message that doesn't match any defined command
-  ctx.reply("Command not found. Please use valid commands.");
+  ctx.reply('Command not found. Please use valid commands.');
 });
 
 bot.launch();
