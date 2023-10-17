@@ -6,12 +6,19 @@ import {
   startResponse,
 } from './botResponses.js';
 import 'dotenv/config';
-import { isBlocked, isRegistered, isVolunteer } from './firebase.js';
+import {
+  connectUser,
+  isBlocked,
+  isConnected,
+  isRegistered,
+  isVolunteer,
+} from './firebase.js';
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // Start bot
 bot.start(async (ctx) => {
+  connectUser(ctx.from.id);
   const msg = await startResponse({
     id: ctx.from.id,
     name: ctx.from.first_name,
@@ -20,9 +27,9 @@ bot.start(async (ctx) => {
   ctx.reply(msg);
 });
 
-bot.command('test', (ctx) => {
-  ctx.reply(JSON.stringify(ctx.from));
-});
+// bot.command('test', (ctx) => {
+//   ctx.reply(JSON.stringify(ctx.from));
+// });
 
 // Admin commands
 bot.command('addVolunteer', async (ctx) => {
@@ -90,8 +97,11 @@ bot.command('register', async (ctx) => {
 
 // Volunteer commands
 bot.command('reportUser', async (ctx) => {
+  if (!isConnected(ctx.from.id)) {
+    ctx.reply(`you are disconnected. use /start to reconnect.`);
+  }
   // volunteer guard
-  if (isVolunteer(ctx.from.id)) {
+  else if (isVolunteer(ctx.from.id)) {
     ctx.reply(`oops, something went wrong...`);
     return;
   } else {
@@ -151,18 +161,26 @@ bot.command('reportUser', async (ctx) => {
 
 // Command for volunteers to start volunteering
 bot.command('startVolunteering', async (ctx) => {
-  const userId = ctx.from.id;
-  // Implement logic for a volunteer to start volunteering
-  // You can use `ctx.reply` to communicate with the volunteer
-  await ctx.reply('You are now volunteering.');
+  if (!isConnected(ctx.from.id)) {
+    ctx.reply(`you are disconnected. use /start to reconnect.`);
+  } else {
+    const userId = ctx.from.id;
+    // Implement logic for a volunteer to start volunteering
+    // You can use `ctx.reply` to communicate with the volunteer
+    await ctx.reply('You are now volunteering.');
+  }
 });
 
 // Command for volunteers to end volunteering
 bot.command('endVolunteering', async (ctx) => {
-  const userId = ctx.from.id;
-  // Implement logic for a volunteer to end volunteering
-  // You can use `ctx.reply` to communicate with the volunteer
-  await ctx.reply('You have ended your volunteering session.');
+  if (!isConnected(ctx.from.id)) {
+    ctx.reply(`you are disconnected. use /start to reconnect.`);
+  } else {
+    const userId = ctx.from.id;
+    // Implement logic for a volunteer to end volunteering
+    // You can use `ctx.reply` to communicate with the volunteer
+    await ctx.reply('You have ended your volunteering session.');
+  }
 });
 
 bot.command('fetchReportedUser', async (ctx) => {
@@ -175,7 +193,7 @@ bot.command('fetchReportedUser', async (ctx) => {
 // Handle unknown commands
 bot.on('text', (ctx) => {
   // This will be triggered when the user sends a message that doesn't match any defined command
-  ctx.reply('Command not found. Please use valid commands.');
+  ctx.reply('Command not found. Use /start to use valid commands.');
 });
 
 bot.launch();
