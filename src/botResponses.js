@@ -6,7 +6,7 @@ import {
   removeVolunteer,
   blockUser,
   unblockUser,
-} from "./firebase.js";
+} from './firebase.js';
 
 export async function startResponse(user) {
   try {
@@ -16,12 +16,12 @@ export async function startResponse(user) {
       await addUser(user);
     }
     fetchedUser = await getUserById(user.id);
-    if (fetchedUser.role === "admin") {
-      return "Use /addVolunteer [userId] to add a new volunteer.\nUse /removeVolunteer [userId] to remove user as volunteer.\nUse /blockUser [userId] to block a user.\nUse /unblockUser [userId] to unblock a user.\nUse /start to see menu again.";
-    } else if (fetchedUser.role === "volunteer") {
-      return "Use /startVolunteer to match with a user.\nUse /endChat to disconnect with user.\nUse /reportUser [userId] to report user to admin.\nUse /start to see menu again.";
+    if (fetchedUser.role === 'admin') {
+      return 'Use /addVolunteer [userId] to add a new volunteer.\nUse /removeVolunteer [userId] to remove user as volunteer.\nUse /blockUser [userId] to block a user.\nUse /unblockUser [userId] to unblock a user.\nUse /start to see menu again.';
+    } else if (fetchedUser.role === 'volunteer') {
+      return 'Use /startVolunteer to match with a user.\nUse /endChat to disconnect with user.\nUse /reportUser [userId] to report user to admin.\nUse /start to see menu again.';
     }
-    return "Welcome to Helpline Bot.\nUse /getHelp to be matched with a volunteer.\nUse /endChat to end the chat with the volunteer.\nIf you are a volunteer, use /register to register your status with admin then /start again.";
+    return 'Welcome to Helpline Bot.\nUse /getHelp to be matched with a volunteer.\nUse /endChat to end the chat with the volunteer.\nIf you are a volunteer, use /register to register your status with admin then /start again.\nUse /stop to disconnect.';
   } catch (e) {
     return `error occurred when starting bot`;
   }

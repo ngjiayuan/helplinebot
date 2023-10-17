@@ -9,10 +9,12 @@ import 'dotenv/config';
 import {
   connectUser,
   disconnectUser,
+  findAvailableVolunteer,
   isAdmin,
   isBlocked,
   isConnected,
   isRegistered,
+  isUserInChatSession,
   isVolunteer,
 } from './firebase.js';
 
@@ -169,21 +171,39 @@ bot.command('reportUser', async (ctx) => {
 // });
 
 // Command for general users to request help
-// bot.command("getHelp", async (ctx) => {
-//   const userId = ctx.from.id;
-//   if (!users[userId].isChatting) {
-//     //note this will break the code; should query database
-//     // Implement logic to match the user with an available volunteer
-//     // Set up an anonymous chat session
-//     // You can use ctx.reply to communicate with the user
-//     await ctx.reply("Finding a volunteer to help you...");
-//     // Set the isChatting flag to true to indicate an active chat session
-//     users[userId].isChatting = true;
-//   } else {
-//     // Inform the user that they are already in an active chat session
-//     await ctx.reply("You are already in an active chat session.");
-//   }
-// });
+bot.command('getHelp', async (ctx) => {
+  const userId = ctx.from.id;
+
+  // // Check if the user is already in an active chat session
+  // if (await isUserInChatSession(userId)) {
+  //   ctx.reply('You are already in an active chat session.');
+  //   return;
+  // }
+
+  // Find an available volunteer
+  const availableVolunteers = await findAvailableVolunteer();
+  console.log(availableVolunteers)
+
+  // TODO: not sure how to implement matching and talking
+  // Update user and volunteer states to indicate they are in an active chat 
+  // if (availableVolunteer) {
+  //   // Establish a connection between the user and the volunteer
+  //   connectUserWithVolunteer(userId, availableVolunteer.id);
+
+  //   // Notify the user and volunteer
+  //   ctx.reply('Finding a volunteer to help you...');
+  //   // Notify the volunteer as well
+  //   bot.telegram.sendMessage(
+  //     availableVolunteer.id,
+  //     'You have been connected with a user who needs help.'
+  //   );
+
+  //   setUserInChatSession(userId);
+  //   setVolunteerInChatSession(availableVolunteer.id);
+  // } else {
+  //   ctx.reply('Sorry, no available volunteers at the moment. Please try again later.');
+  // }
+});
 
 // bot.command("endChat", async (ctx) => {
 //   const userId = ctx.from.id;

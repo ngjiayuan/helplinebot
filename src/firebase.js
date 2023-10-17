@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, getDocs, collection, query, where } from 'firebase/firestore';
 import 'dotenv/config';
 import { REGISTER_STATE, ROLES } from './constant.js';
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -251,3 +251,47 @@ export async function isAdmin(id) {
   }
 }
 
+export async function isUserInChatSession(id) {
+  try {
+    const docRef = doc(db, 'user', `${id}`);
+    const docData = (await getDoc(docRef)).data();
+    if (docData) {
+      return docData.isChatting;
+    }
+    return false; // undefined if no such user
+  } catch (e) {
+    throw new Error(`error fetching user isChatting status`);
+  }
+}
+
+export async function findAvailableVolunteer() {
+  try {
+    const userCollectionRef = collection(db, 'user');
+
+    // Query to retrieve volunteers who is free to chat
+    const q = query(
+      userCollectionRef,
+      where('role', '==', ROLES.VOLUNTEER),
+      where('isConnected', '==', true),
+      where('isRegistered', '==', REGISTER_STATE.APPROVED),
+      where('isChatting', '==', false)
+    );
+    console.log(q)
+
+    // Get the documents that match the query
+    const querySnapshot = await getDocs(q);
+
+    // Extract user data from the documents
+    const availableVolunteers = [];
+
+    querySnapshot.forEach((doc) => {
+      // Get the user data for each matching document
+      const userData = doc.data();
+      availableVolunteers.push(userData);
+    });
+
+    return availableVolunteers;
+  } catch (e) {
+    throw new Error(`Error fetching available volunteers: ${e.message}`);
+  }
+}
