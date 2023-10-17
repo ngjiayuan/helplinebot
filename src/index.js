@@ -8,6 +8,7 @@ import {
 import 'dotenv/config';
 import {
   connectUser,
+  disconnectUser,
   isAdmin,
   isBlocked,
   isConnected,
@@ -28,14 +29,24 @@ bot.start(async (ctx) => {
   ctx.reply(msg);
 });
 
+bot.command('stop', async (ctx) => {
+  const userIsBlocked = await isBlocked(ctx.from.id);
+  if (userIsBlocked) {
+    ctx.reply('oops, something went wrong...');
+  } else {
+    await disconnectUser(ctx.from.id);
+    ctx.reply('disconnected: Have a good day! /start to interact with the bot again.');
+  }
+});
+
 // bot.command('test', (ctx) => {
 //   ctx.reply(JSON.stringify(ctx.from));
 // });
 
 // Admin commands
 bot.command('addVolunteer', async (ctx) => {
-  const isAdmin = isAdmin(ctx.from.id);
-  if (!isAdmin) {
+  const userIsAdmin = isAdmin(ctx.from.id);
+  if (!userIsAdmin) {
     ctx.reply('oops, something went wrong...');
   } else {
     const args = ctx.update.message.text.split(' ');
@@ -49,8 +60,8 @@ bot.command('addVolunteer', async (ctx) => {
 });
 
 bot.command('removeVolunteer', async (ctx) => {
-  const isAdmin = isAdmin(ctx.from.id);
-  if (!isAdmin) {
+  const isUserAdmin = isAdmin(ctx.from.id);
+  if (!isUserAdmin) {
     ctx.reply('oops, something went wrong...');
   } else {
     const args = ctx.update.message.text.split(' ');
@@ -64,8 +75,8 @@ bot.command('removeVolunteer', async (ctx) => {
 });
 
 bot.command('blockUser', async (ctx) => {
-  const isAdmin = isAdmin(ctx.from.id);
-  if (!isAdmin) {
+  const isUserAdmin = isAdmin(ctx.from.id);
+  if (!isUserAdmin) {
     ctx.reply('oops, something went wrong...');
   } else {
     const args = ctx.update.message.text.split(' ');
@@ -80,8 +91,8 @@ bot.command('blockUser', async (ctx) => {
 });
 
 bot.command('unblockUser', async (ctx) => {
-  const isAdmin = isAdmin(ctx.from.id);
-  if (!isAdmin) {
+  const isUserAdmin = isAdmin(ctx.from.id);
+  if (!isUserAdmin) {
     ctx.reply('oops, something went wrong...');
   } else {
     const args = ctx.update.message.text.split(' ');
@@ -125,13 +136,13 @@ bot.command('register', async (ctx) => {
 
 // Volunteer commands
 bot.command('reportUser', async (ctx) => {
-  const isConnected = await isConnected(ctx.from.id);
-  const isVolunteer = await isVolunteer(ctx.from.id);
-  if (!isConnected) {
+  const userIsConnected = await isConnected(ctx.from.id);
+  const userIsVolunteer = await isVolunteer(ctx.from.id);
+  if (!userIsConnected) {
     ctx.reply(`you are disconnected. use /start to reconnect.`);
   }
   // volunteer guard
-  else if (isVolunteer) {
+  else if (userIsVolunteer) {
     ctx.reply(`oops, something went wrong...`);
     return;
   } else {
@@ -191,11 +202,11 @@ bot.command('reportUser', async (ctx) => {
 
 // Command for volunteers to start volunteering
 bot.command('startVolunteering', async (ctx) => {
-  const isConnected = await isConnected(ctx.from.id);
-  const isVolunteer = await isVolunteer(ctx.from.id);
-  if (!isVolunteer) {
+  const userIsConnected = await isConnected(ctx.from.id);
+  const userIsVolunteer = await isVolunteer(ctx.from.id);
+  if (!userIsVolunteer) {
     ctx.reply('oops, something went wrong...');
-  } else if (!isConnected) {
+  } else if (!userIsConnected) {
     ctx.reply(`you are disconnected. use /start to reconnect.`);
   } else {
     const userId = ctx.from.id;
@@ -207,8 +218,8 @@ bot.command('startVolunteering', async (ctx) => {
 
 // Command for volunteers to end volunteering
 bot.command('endVolunteering', async (ctx) => {
-  const isVolunteer = await isVolunteer(ctx.from.id);
-  if (!isVolunteer) {
+  const userIsVolunteer = await isVolunteer(ctx.from.id);
+  if (!userIsVolunteer) {
     ctx.reply('oops, something went wrong...');
   } else if (!isConnected(ctx.from.id)) {
     ctx.reply(`you are disconnected. use /start to reconnect.`);
