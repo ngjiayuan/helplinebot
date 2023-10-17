@@ -8,6 +8,7 @@ import {
 import 'dotenv/config';
 import {
   connectUser,
+  isAdmin,
   isBlocked,
   isConnected,
   isRegistered,
@@ -18,7 +19,7 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // Start bot
 bot.start(async (ctx) => {
-  connectUser(ctx.from.id);
+  await connectUser(ctx.from.id);
   const msg = await startResponse({
     id: ctx.from.id,
     name: ctx.from.first_name,
@@ -33,52 +34,79 @@ bot.start(async (ctx) => {
 
 // Admin commands
 bot.command('addVolunteer', async (ctx) => {
-  const args = ctx.update.message.text.split(' ');
-  if (args.length === 1) {
-    ctx.reply(`no user id found. use /addVolunteer [userId]`);
-    return;
+  const isAdmin = isAdmin(ctx.from.id);
+  if (!isAdmin) {
+    ctx.reply('oops, something went wrong...');
+  } else {
+    const args = ctx.update.message.text.split(' ');
+    if (args.length === 1) {
+      ctx.reply(`no user id found. use /addVolunteer [userId]`);
+      return;
+    }
+    const msg = await addVolunteerResponse(ctx.from.id, args[1]);
+    ctx.reply(msg);
   }
-  const msg = await addVolunteerResponse(ctx.from.id, args[1]);
-  ctx.reply(msg);
 });
 
 bot.command('removeVolunteer', async (ctx) => {
-  const args = ctx.update.message.text.split(' ');
-  if (args.length === 1) {
-    ctx.reply(`no user id found. use /removeVolunteer [userId]`);
-    return;
+  const isAdmin = isAdmin(ctx.from.id);
+  if (!isAdmin) {
+    ctx.reply('oops, something went wrong...');
+  } else {
+    const args = ctx.update.message.text.split(' ');
+    if (args.length === 1) {
+      ctx.reply(`no user id found. use /removeVolunteer [userId]`);
+      return;
+    }
+    const msg = await removeVolunteerResponse(ctx.from.id, args[1]);
+    ctx.reply(msg);
   }
-  const msg = await removeVolunteerResponse(ctx.from.id, args[1]);
-  ctx.reply(msg);
 });
 
 bot.command('blockUser', async (ctx) => {
-  const args = ctx.update.message.text.split(' ');
-  if (args.length === 1) {
-    ctx.reply(`no user id found. use /blockUser [userId]`);
-    return;
+  const isAdmin = isAdmin(ctx.from.id);
+  if (!isAdmin) {
+    ctx.reply('oops, something went wrong...');
+  } else {
+    const args = ctx.update.message.text.split(' ');
+    if (args.length === 1) {
+      ctx.reply(`no user id found. use /blockUser [userId]`);
+      return;
+    }
+    const msg = await blockUserResponse(ctx.from.id, args[1]);
+    // ctx.sendMessage(msg, { chat_id: id })
+    ctx.reply(msg);
   }
-  const msg = await blockUserResponse(ctx.from.id, args[1]);
-  // ctx.sendMessage(msg, { chat_id: id })
-  ctx.reply(msg);
 });
 
 bot.command('unblockUser', async (ctx) => {
-  const args = ctx.update.message.text.split(' ');
-  if (args.length === 1) {
-    ctx.reply(`no user id found. use /unblockUser [userId]`);
-    return;
+  const isAdmin = isAdmin(ctx.from.id);
+  if (!isAdmin) {
+    ctx.reply('oops, something went wrong...');
+  } else {
+    const args = ctx.update.message.text.split(' ');
+    if (args.length === 1) {
+      ctx.reply(`no user id found. use /unblockUser [userId]`);
+      return;
+    }
+    const msg = await blockUserResponse(ctx.from.id, args[1]);
+    ctx.reply(msg);
   }
-  const msg = await blockUserResponse(ctx.from.id, args[1]);
-  ctx.reply(msg);
+});
+
+bot.command('fetchReportedUser', async (ctx) => {
+  const adminId = ctx.from.id;
+  // Implement logic to fetch reported users
+  // You can use `ctx.reply` to communicate with the admin
+  await ctx.reply('Fetching reported users...');
 });
 
 // all user commands
 // Database will store isRegistered to keep track
 bot.command('register', async (ctx) => {
   // TODO: need to find a way to prevent abuse of this command
-  const userIsRegistered = isRegistered(ctx.from.id);
-  const userIsBlocked = isBlocked(ctx.from.id);
+  const userIsRegistered = await isRegistered(ctx.from.id);
+  const userIsBlocked = await isBlocked(ctx.from.id);
   if (userIsRegistered && !userIsBlocked) {
     ctx.sendMessage('a request has already been sent to or approved by admin');
   } else if (userIsBlocked) {
@@ -97,11 +125,13 @@ bot.command('register', async (ctx) => {
 
 // Volunteer commands
 bot.command('reportUser', async (ctx) => {
-  if (!isConnected(ctx.from.id)) {
+  const isConnected = await isConnected(ctx.from.id);
+  const isVolunteer = await isVolunteer(ctx.from.id);
+  if (!isConnected) {
     ctx.reply(`you are disconnected. use /start to reconnect.`);
   }
   // volunteer guard
-  else if (isVolunteer(ctx.from.id)) {
+  else if (isVolunteer) {
     ctx.reply(`oops, something went wrong...`);
     return;
   } else {
@@ -161,7 +191,11 @@ bot.command('reportUser', async (ctx) => {
 
 // Command for volunteers to start volunteering
 bot.command('startVolunteering', async (ctx) => {
-  if (!isConnected(ctx.from.id)) {
+  const isConnected = await isConnected(ctx.from.id);
+  const isVolunteer = await isVolunteer(ctx.from.id);
+  if (!isVolunteer) {
+    ctx.reply('oops, something went wrong...');
+  } else if (!isConnected) {
     ctx.reply(`you are disconnected. use /start to reconnect.`);
   } else {
     const userId = ctx.from.id;
@@ -173,7 +207,10 @@ bot.command('startVolunteering', async (ctx) => {
 
 // Command for volunteers to end volunteering
 bot.command('endVolunteering', async (ctx) => {
-  if (!isConnected(ctx.from.id)) {
+  const isVolunteer = await isVolunteer(ctx.from.id);
+  if (!isVolunteer) {
+    ctx.reply('oops, something went wrong...');
+  } else if (!isConnected(ctx.from.id)) {
     ctx.reply(`you are disconnected. use /start to reconnect.`);
   } else {
     const userId = ctx.from.id;
@@ -181,13 +218,6 @@ bot.command('endVolunteering', async (ctx) => {
     // You can use `ctx.reply` to communicate with the volunteer
     await ctx.reply('You have ended your volunteering session.');
   }
-});
-
-bot.command('fetchReportedUser', async (ctx) => {
-  const adminId = ctx.from.id;
-  // Implement logic to fetch reported users
-  // You can use `ctx.reply` to communicate with the admin
-  await ctx.reply('Fetching reported users...');
 });
 
 // Handle unknown commands
